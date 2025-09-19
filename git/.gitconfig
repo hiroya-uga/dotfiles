@@ -1,0 +1,12 @@
+[user]
+	name = hiroya-uga
+
+[core]
+	autocrlf = false
+	safecrlf = true
+	ignorecase = false
+	quotepath = false
+	pager = LESSCHARSET=utf-8 less
+
+[commit]
+	gpgsign = true
