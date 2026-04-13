@@ -18,7 +18,6 @@ Backup-And-Copy "$CURRENT_DIR\shell\powershell\Microsoft.PowerShell_profile.ps1"
 # Git 設定
 Backup-And-Copy "$CURRENT_DIR\git\.gitconfig" "$HOME\.gitconfig"
 Backup-And-Copy "$CURRENT_DIR\git\.gitignore_global" "$HOME\.gitignore_global"
-git config --global core.excludesfile "$HOME\.gitignore_global"
 
 # EditorConfig
 Backup-And-Copy "$CURRENT_DIR\editor\.editorconfig" "$HOME\.editorconfig"
@@ -27,7 +26,8 @@ Backup-And-Copy "$CURRENT_DIR\editor\.editorconfig" "$HOME\.editorconfig"
 Backup-And-Copy "$CURRENT_DIR\editor\.prettierrc.js" "$HOME\.prettierrc.js"
 
 Write-Host "✅ Dotfiles have been copied!"
-Write-Host "   👉 Don't forget to configure your Git identity:" -ForegroundColor Yellow
-Write-Host "      git config --global user.name  \"Your Name\""
-Write-Host "      git config --global user.email \"you@example.com\""
+Write-Host "   👉 Configure your Git identity in ~/.gitconfig.local:" -ForegroundColor Yellow
+Write-Host "      git config -f ~/.gitconfig.local user.name       `"Your Name`""
+Write-Host "      git config -f ~/.gitconfig.local user.email      `"you@example.com`""
+Write-Host "      git config -f ~/.gitconfig.local user.signingkey `"YOUR_GPG_KEY_ID`""
 Write-Host ""
