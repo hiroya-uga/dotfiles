@@ -1,5 +1,10 @@
-eval "$(~/.local/bin/mise activate zsh)"
 export PATH="/usr/local/sbin:$PATH"
+
+if command -v mise &>/dev/null; then
+  eval "$(mise activate zsh)"
+elif [[ -x "$HOME/.local/bin/mise" ]]; then
+  eval "$($HOME/.local/bin/mise activate zsh)"
+fi
 
 export GPG_TTY=$(tty)
 
