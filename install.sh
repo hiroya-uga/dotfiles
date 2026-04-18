@@ -7,41 +7,86 @@ CURRENT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # 引数で動作を制御（デフォルト copy、--symlink でシンボリックリンク）
 USE_SYMLINK=false
+FORCE_OVERWRITE=false
+
+usage() {
+  echo "Usage: zsh ./install.sh [--symlink] [--force]"
+}
+
 for arg in "$@"; do
   case "$arg" in
     --symlink) USE_SYMLINK=true ;;
-    *) echo "Unknown option: $arg" >&2; exit 1 ;;
+    --force) FORCE_OVERWRITE=true ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $arg" >&2
+      usage >&2
+      exit 1
+      ;;
   esac
 done
 
-# シンボリックリンク or コピーする関数（実ファイルが存在する場合はバックアップ）
-backup_and_link() {
+# 既存ファイルには --force がない限り触らない
+install_file() {
   local src=$1
   local dst=$2
 
-  if [ -f "$dst" ] && [ ! -L "$dst" ]; then
-    mv "$dst" "$dst.bak"
+  mkdir -p "$(dirname "$dst")"
+
+  if [ -e "$dst" ] || [ -L "$dst" ]; then
+    if [[ "$FORCE_OVERWRITE" == "true" ]]; then
+      rm -f "$dst"
+    else
+      echo "Refusing to overwrite existing file: $dst" >&2
+      echo "Re-run with --force to replace it." >&2
+      exit 1
+    fi
   fi
 
   if [[ "$USE_SYMLINK" == "true" ]]; then
-    ln -sf "$src" "$dst"
+    ln -s "$src" "$dst"
   else
     cp "$src" "$dst"
   fi
 }
 
 # Zsh 設定
-backup_and_link "$CURRENT_DIR/shell/zsh/.zshrc" "$HOME/.zshrc"
+install_file "$CURRENT_DIR/shell/zsh/.zshrc" "$HOME/.zshrc"
 
 # Git 設定
-backup_and_link "$CURRENT_DIR/git/.gitconfig" "$HOME/.gitconfig"
-backup_and_link "$CURRENT_DIR/git/.gitignore_global" "$HOME/.gitignore_global"
+install_file "$CURRENT_DIR/git/.gitconfig" "$HOME/.gitconfig"
+install_file "$CURRENT_DIR/git/.gitignore_global" "$HOME/.gitignore_global"
 
 # EditorConfig
-backup_and_link "$CURRENT_DIR/editor/.editorconfig" "$HOME/.editorconfig"
+install_file "$CURRENT_DIR/editor/.editorconfig" "$HOME/.editorconfig"
 
 # Prettier
-backup_and_link "$CURRENT_DIR/editor/.prettierrc.js" "$HOME/.prettierrc.js"
+install_file "$CURRENT_DIR/editor/.prettierrc.js" "$HOME/.prettierrc.js"
+
+# Claude Code 設定
+install_file "$CURRENT_DIR/claude/settings.json" "$HOME/.claude/settings.json"
+
+# Claude Code スキル（外部リポジトリを git clone）
+SKILLS_DIR="$HOME/.claude/skills"
+mkdir -p "$SKILLS_DIR"
+
+clone_skill() {
+  local repo=$1
+  local name=$2
+  local dest="$SKILLS_DIR/$name"
+
+  if [ -d "$dest" ]; then
+    echo "Skill already exists, skipping: $dest"
+  else
+    git clone "$repo" "$dest"
+  fi
+}
+
+clone_skill "git@github.com:uga-skills/git-commit.git"     "git-commit"
+clone_skill "git@github.com:uga-skills/review-markup.git"  "review-markup"
 
 if [[ "$USE_SYMLINK" == "true" ]]; then
   echo "✅ Dotfiles have been linked!"

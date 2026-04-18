@@ -1,7 +1,7 @@
 [core]
 	autocrlf = false
 	safecrlf = true
-	ignorecase = false
+	ignorecase = true
 	quotepath = false
 	pager = LESSCHARSET=utf-8 less
 	excludesfile = ~/.gitignore_global

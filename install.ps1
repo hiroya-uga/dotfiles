@@ -1,29 +1,62 @@
+param(
+  [switch]$Force
+)
+
 Write-Host "🍣 Setting up dotfiles ..."
 
 $CURRENT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
-function Backup-And-Copy($src, $dst) {
-  if (Test-Path $dst) {
-    $bak = "$dst.bak"
-    if (Test-Path $bak) { Remove-Item $bak -Force -ErrorAction SilentlyContinue }
-    Rename-Item $dst $bak -Force
+function Install-File($src, $dst, [switch]$Force) {
+  $parent = Split-Path -Parent $dst
+  if ($parent -and -not (Test-Path -LiteralPath $parent)) {
+    New-Item -ItemType Directory -Path $parent -Force | Out-Null
   }
-  Copy-Item -Path $src -Destination $dst -Force
+
+  if (Test-Path -LiteralPath $dst) {
+    if (-not $Force) {
+      throw "Refusing to overwrite existing file: $dst`nRe-run with -Force to replace it."
+    }
+
+    Remove-Item -LiteralPath $dst -Force
+  }
+
+  Copy-Item -LiteralPath $src -Destination $dst
 }
 
 
 # PowerShell プロファイル（Zsh の .zshrc に相当）
-Backup-And-Copy "$CURRENT_DIR\shell\powershell\Microsoft.PowerShell_profile.ps1" $PROFILE
+Install-File "$CURRENT_DIR\shell\powershell\Microsoft.PowerShell_profile.ps1" $PROFILE -Force:$Force
 
 # Git 設定
-Backup-And-Copy "$CURRENT_DIR\git\.gitconfig" "$HOME\.gitconfig"
-Backup-And-Copy "$CURRENT_DIR\git\.gitignore_global" "$HOME\.gitignore_global"
+Install-File "$CURRENT_DIR\git\.gitconfig" "$HOME\.gitconfig" -Force:$Force
+Install-File "$CURRENT_DIR\git\.gitignore_global" "$HOME\.gitignore_global" -Force:$Force
 
 # EditorConfig
-Backup-And-Copy "$CURRENT_DIR\editor\.editorconfig" "$HOME\.editorconfig"
+Install-File "$CURRENT_DIR\editor\.editorconfig" "$HOME\.editorconfig" -Force:$Force
 
 # Prettier
-Backup-And-Copy "$CURRENT_DIR\editor\.prettierrc.js" "$HOME\.prettierrc.js"
+Install-File "$CURRENT_DIR\editor\.prettierrc.js" "$HOME\.prettierrc.js" -Force:$Force
+
+# Claude Code 設定
+Install-File "$CURRENT_DIR\claude\settings.json" "$HOME\.claude\settings.json" -Force:$Force
+
+# Claude Code スキル（外部リポジトリを git clone）
+$SkillsDir = "$HOME\.claude\skills"
+if (-not (Test-Path -LiteralPath $SkillsDir)) {
+  New-Item -ItemType Directory -Path $SkillsDir -Force | Out-Null
+}
+
+function Clone-Skill($repo, $name) {
+  $dest = Join-Path $SkillsDir $name
+  if (Test-Path -LiteralPath $dest) {
+    Write-Host "Skill already exists, skipping: $dest"
+  } else {
+    git clone $repo $dest
+  }
+}
+
+Clone-Skill "git@github.com:uga-skills/git-commit.git"    "git-commit"
+Clone-Skill "git@github.com:uga-skills/review-markup.git" "review-markup"
 
 Write-Host "✅ Dotfiles have been copied!"
 Write-Host "   👉 Configure your Git identity in ~/.gitconfig.local:" -ForegroundColor Yellow
