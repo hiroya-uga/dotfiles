@@ -29,7 +29,7 @@ for arg in "$@"; do
   esac
 done
 
-# 既存ファイルには --force がない限り触らない
+# 既存ファイルは _bak_<timestamp> でバックアップ（--force の場合は削除）
 install_file() {
   local src=$1
   local dst=$2
@@ -40,9 +40,9 @@ install_file() {
     if [[ "$FORCE_OVERWRITE" == "true" ]]; then
       rm -f "$dst"
     else
-      echo "Refusing to overwrite existing file: $dst" >&2
-      echo "Re-run with --force to replace it." >&2
-      exit 1
+      local bak="${dst}_bak_$(date +%Y%m%d%H%M%S)"
+      mv "$dst" "$bak"
+      echo "Backed up existing file: $dst -> $bak"
     fi
   fi
 

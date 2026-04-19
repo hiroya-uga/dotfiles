@@ -13,11 +13,14 @@ function Install-File($src, $dst, [switch]$Force) {
   }
 
   if (Test-Path -LiteralPath $dst) {
-    if (-not $Force) {
-      throw "Refusing to overwrite existing file: $dst`nRe-run with -Force to replace it."
+    if ($Force) {
+      Remove-Item -LiteralPath $dst -Force
+    } else {
+      $timestamp = Get-Date -Format "yyyyMMddHHmmss"
+      $bak = "${dst}_bak_${timestamp}"
+      Move-Item -LiteralPath $dst -Destination $bak
+      Write-Host "Backed up existing file: $dst -> $bak"
     }
-
-    Remove-Item -LiteralPath $dst -Force
   }
 
   Copy-Item -LiteralPath $src -Destination $dst
