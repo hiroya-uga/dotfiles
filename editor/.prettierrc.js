@@ -28,5 +28,11 @@ module.exports = {
         jsxSingleQuote: true,
       },
     },
+    {
+      files: ['**/*.ps1'],
+      options: {
+        tabWidth: 4,
+      },
+    },
   ],
 };
